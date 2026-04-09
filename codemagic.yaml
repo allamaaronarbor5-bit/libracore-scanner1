@@ -2,16 +2,15 @@ workflows:
   android-apk:
     name: Android APK Build
     max_build_duration: 60
+
     environment:
-      vars:
-        PACKAGE_NAME: "com.libracore.scanner"
       java: 17
 
     scripts:
       - name: Build APK
         script: |
           cd android
-          chmod +x gradlew
+          chmod +x ./gradlew
           ./gradlew assembleDebug
 
     artifacts:
