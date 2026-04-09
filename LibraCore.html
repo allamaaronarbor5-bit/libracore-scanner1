@@ -1,0 +1,1676 @@
+k<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LibraCore — School Library Management</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root {
+  --bg:#0d0f14; --surface:#151820; --surface2:#1c2030; --border:#252a38;
+  --text:#e8eaf2; --muted:#7b82a0;
+  --accent:#6c8fff; --accent2:#a78bfa;
+  --green:#34d399; --red:#f87171; --amber:#fbbf24; --orange:#fb923c; --blue:#60a5fa;
+  --radius:14px; --radius-sm:8px; --shadow:0 4px 24px rgba(0,0,0,.4);
+  --font-display:'DM Serif Display',serif; --font:'DM Sans',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:15px}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+
+/* ── SIDEBAR ── */
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:252px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100}
+.logo{padding:22px 22px 18px;border-bottom:1px solid var(--border)}
+.logo-title{font-family:var(--font-display);font-size:1.55rem;color:var(--text);letter-spacing:-.5px}
+.logo-sub{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-top:2px}
+.nav{padding:14px 10px;flex:1;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+.nav-sep{height:1px;background:var(--border);margin:8px 4px}
+.nav-label{font-size:.62rem;text-transform:uppercase;letter-spacing:1.8px;color:var(--muted);padding:8px 10px 3px;font-weight:700}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius-sm);cursor:pointer;font-size:.845rem;font-weight:500;color:var(--muted);transition:all .18s;border:none;background:none;width:100%;text-align:left;position:relative}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:rgba(108,143,255,.13);color:var(--accent)}
+.nav-icon{width:15px;height:15px;flex-shrink:0}
+.nav-badge{margin-left:auto;font-size:.62rem;font-weight:700;padding:1px 7px;border-radius:99px;min-width:18px;text-align:center}
+.nb-blue{background:rgba(96,165,250,.15);color:var(--blue);border:1px solid rgba(96,165,250,.25)}
+.nb-red{background:rgba(248,113,113,.15);color:var(--red);border:1px solid rgba(248,113,113,.25)}
+.nb-amber{background:rgba(251,191,36,.12);color:var(--amber);border:1px solid rgba(251,191,36,.25)}
+.nb-orange{background:rgba(251,146,60,.12);color:var(--orange);border:1px solid rgba(251,146,60,.25)}
+.sidebar-footer{padding:12px 18px;border-top:1px solid var(--border);font-size:.7rem;color:var(--muted)}
+
+/* ── MAIN ── */
+.main{margin-left:252px;min-height:100vh;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:90;background:rgba(13,15,20,.9);backdrop-filter:blur(18px);border-bottom:1px solid var(--border);padding:13px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-title{font-family:var(--font-display);font-size:1.2rem}
+.topbar-tag{font-size:.68rem;background:var(--surface2);border:1px solid var(--border);padding:2px 9px;border-radius:99px;color:var(--muted)}
+.topbar-actions{display:flex;gap:8px;align-items:center}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:var(--radius-sm);font-family:var(--font);font-size:.79rem;font-weight:600;cursor:pointer;transition:all .18s;border:none;white-space:nowrap}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#5577ee;transform:translateY(-1px);box-shadow:0 4px 14px rgba(108,143,255,.4)}
+.btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--border)}
+.btn-sm{padding:5px 11px;font-size:.75rem}
+.btn-danger{background:rgba(248,113,113,.11);color:var(--red);border:1px solid rgba(248,113,113,.22)}
+.btn-danger:hover{background:rgba(248,113,113,.2)}
+.btn-success{background:rgba(52,211,153,.11);color:var(--green);border:1px solid rgba(52,211,153,.22)}
+.btn-success:hover{background:rgba(52,211,153,.2)}
+.btn-amber{background:rgba(251,191,36,.11);color:var(--amber);border:1px solid rgba(251,191,36,.22)}
+.btn-amber:hover{background:rgba(251,191,36,.2)}
+
+/* ── CONTENT ── */
+.content{padding:26px;flex:1}
+.page{display:none;animation:fadeIn .22s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+/* ── STATS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:13px;margin-bottom:22px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:17px;position:relative;overflow:hidden;transition:transform .2s,border-color .2s}
+.stat-card:hover{transform:translateY(-2px);border-color:rgba(108,143,255,.28)}
+.stat-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent 60%,rgba(255,255,255,.015));pointer-events:none}
+.stat-label{font-size:.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:7px;font-weight:600}
+.stat-value{font-family:var(--font-display);font-size:1.95rem;line-height:1}
+.stat-sub{font-size:.7rem;color:var(--muted);margin-top:5px}
+.stat-ico{position:absolute;right:14px;top:14px;font-size:1.3rem;opacity:.2}
+.s-blue .stat-value{color:var(--blue)}
+.s-green .stat-value{color:var(--green)}
+.s-red .stat-value{color:var(--red)}
+.s-amber .stat-value{color:var(--amber)}
+.s-orange .stat-value{color:var(--orange)}
+.s-purple .stat-value{color:var(--accent2)}
+
+/* ── SECTION HEADER ── */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;flex-wrap:wrap}
+.section-title{font-family:var(--font-display);font-size:1.02rem}
+
+/* ── FILTERS ── */
+.filters{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.search-wrap{position:relative;flex:1;min-width:180px}
+.si{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);width:14px;height:14px}
+.input{width:100%;padding:8px 11px 8px 33px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:var(--font);font-size:.835rem;transition:border-color .18s;outline:none}
+.input:focus{border-color:var(--accent)}
+.input.ni{padding-left:11px}
+select.input{cursor:pointer}
+option{background:var(--surface2)}
+
+/* ── TABLE ── */
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.table-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead th{background:var(--surface2);padding:10px 13px;text-align:left;font-size:.65rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);white-space:nowrap;font-weight:700;border-bottom:1px solid var(--border)}
+tbody tr{border-bottom:1px solid var(--border);transition:background .15s;animation:rowIn .2s ease both}
+@keyframes rowIn{from{opacity:0}to{opacity:1}}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:rgba(255,255,255,.018)}
+tbody tr.row-overdue{background:rgba(220,38,38,.03)}
+tbody tr.row-overdue:hover{background:rgba(220,38,38,.06)}
+tbody tr.row-damaged{background:rgba(251,191,36,.025)}
+tbody tr.row-lost{background:rgba(248,113,113,.025)}
+td{padding:11px 13px;font-size:.825rem;vertical-align:middle}
+.book-name{font-weight:600;font-size:.855rem}
+.book-id{font-size:.66rem;color:var(--muted);font-family:monospace;margin-top:1px}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:99px;font-size:.68rem;font-weight:700;letter-spacing:.2px}
+.bdot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
+.b-pending{background:rgba(37,99,235,.11);color:var(--blue);border:1px solid rgba(37,99,235,.2)}
+.b-overdue{background:rgba(220,38,38,.11);color:var(--red);border:1px solid rgba(220,38,38,.2);animation:pr 2.2s infinite}
+@keyframes pr{0%,100%{border-color:rgba(220,38,38,.2)}50%{border-color:rgba(220,38,38,.55)}}
+.b-damaged{background:rgba(251,191,36,.11);color:var(--amber);border:1px solid rgba(251,191,36,.22)}
+.b-lost{background:rgba(248,113,113,.11);color:var(--red);border:1px solid rgba(248,113,113,.22)}
+.b-normal{background:rgba(52,211,153,.11);color:var(--green);border:1px solid rgba(52,211,153,.2)}
+
+/* ── ICON BUTTONS ── */
+.actions-cell{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.ib{display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;border-radius:var(--radius-sm);cursor:pointer;border:none;transition:all .16s;font-size:.8rem;flex-shrink:0}
+.ib-ret{background:rgba(52,211,153,.1);color:var(--green)}.ib-ret:hover{background:rgba(52,211,153,.22)}
+.ib-edit{background:rgba(108,143,255,.1);color:var(--accent)}.ib-edit:hover{background:rgba(108,143,255,.22)}
+.ib-qr{background:rgba(167,139,250,.1);color:var(--accent2)}.ib-qr:hover{background:rgba(167,139,250,.22)}
+.ib-del{background:rgba(248,113,113,.1);color:var(--red)}.ib-del:hover{background:rgba(248,113,113,.22)}
+
+/* ── DUE PILLS ── */
+.dpill{display:inline-flex;align-items:center;font-size:.68rem;padding:1px 7px;border-radius:99px;margin-top:2px}
+.dp-ok{background:rgba(52,211,153,.09);color:var(--green)}
+.dp-soon{background:rgba(251,191,36,.09);color:var(--amber)}
+.dp-over{background:rgba(220,38,38,.09);color:var(--red)}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:50px 24px;color:var(--muted);font-size:.85rem}
+.empty-ico{font-size:2rem;margin-bottom:10px;opacity:.3}
+
+/* ── ALERT BANNER ── */
+.alert-bar{display:flex;align-items:center;gap:10px;padding:11px 15px;border-radius:var(--radius-sm);margin-bottom:18px;font-size:.81rem}
+.ab-red{background:rgba(220,38,38,.09);border:1px solid rgba(220,38,38,.22);color:var(--red)}
+.ab-amber{background:rgba(251,191,36,.09);border:1px solid rgba(251,191,36,.22);color:var(--amber)}
+.hidden{display:none!important}
+
+/* ── MODAL ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(7px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);width:100%;max-width:460px;max-height:92vh;overflow-y:auto;padding:26px;position:relative;animation:slideUp .22s cubic-bezier(.16,1,.3,1)}
+.modal-lg{max-width:580px}
+@keyframes slideUp{from{opacity:0;transform:translateY(22px) scale(.97)}to{opacity:1;transform:none}}
+.modal-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:12px}
+.modal-title{font-family:var(--font-display);font-size:1.25rem}
+.modal-sub{font-size:.76rem;color:var(--muted);margin-top:2px}
+.xbtn{width:28px;height:28px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:1rem;flex-shrink:0;transition:all .16s}
+.xbtn:hover{background:var(--border);color:var(--text)}
+.fg{margin-bottom:14px}
+.fl{display:block;font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.modal-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;border-top:1px solid var(--border);padding-top:16px}
+
+/* ── RETURN TYPE CHOICES ── */
+.return-choices{display:flex;flex-direction:column;gap:9px;margin-bottom:18px}
+.rc{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:var(--radius-sm);border:2px solid var(--border);cursor:pointer;transition:all .2s;background:var(--surface2)}
+.rc:hover{border-color:rgba(108,143,255,.4);background:rgba(108,143,255,.06)}
+.rc.selected{border-color:var(--rc-color);background:var(--rc-bg)}
+.rc-normal{--rc-color:var(--green);--rc-bg:rgba(52,211,153,.08)}
+.rc-damaged{--rc-color:var(--amber);--rc-bg:rgba(251,191,36,.08)}
+.rc-lost{--rc-color:var(--red);--rc-bg:rgba(248,113,113,.08)}
+.rc-icon{font-size:1.4rem;flex-shrink:0}
+.rc-label{font-weight:700;font-size:.875rem}
+.rc-sub{font-size:.72rem;color:var(--muted);margin-top:1px}
+.rc-check{margin-left:auto;width:18px;height:18px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.65rem;color:#fff;flex-shrink:0;transition:all .18s}
+.rc.selected .rc-check{background:var(--rc-color);border-color:var(--rc-color)}
+.penalty-section{display:none}
+.penalty-section.show{display:block}
+
+/* ── QR MODAL ── */
+.qr-display{background:#fff;border-radius:var(--radius-sm);padding:14px;display:flex;align-items:center;justify-content:center;margin:14px auto;width:fit-content}
+.qr-actions{display:flex;gap:8px;justify-content:center;margin-top:8px}
+
+/* ── SCAN ACTION CHOICES ── */
+.ac-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.ac{padding:14px;border-radius:var(--radius-sm);border:2px solid var(--border);cursor:pointer;text-align:center;transition:all .2s;background:var(--surface2)}
+.ac:hover{border-color:var(--accent)}
+.ac.sel{border-color:var(--accent);background:rgba(108,143,255,.1)}
+.ac-ico{font-size:1.4rem;margin-bottom:5px}
+.ac-lbl{font-size:.8rem;font-weight:700}
+.ac-sub{font-size:.68rem;color:var(--muted);margin-top:1px}
+
+/* ── BOOKS GRID ── */
+.books-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:14px}
+.book-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;transition:all .2s}
+.book-card:hover{border-color:rgba(108,143,255,.35);transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,.28)}
+.bc-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px}
+.bc-title{font-weight:700;font-size:.875rem;line-height:1.3}
+.bc-author{font-size:.72rem;color:var(--muted);margin-top:2px}
+.bc-id{font-size:.65rem;color:var(--muted);font-family:monospace;background:var(--surface2);padding:2px 6px;border-radius:4px;white-space:nowrap}
+.bc-avail{display:inline-flex;align-items:center;gap:5px;font-size:.7rem;font-weight:700}
+.avdot{width:6px;height:6px;border-radius:50%}
+.av-yes{color:var(--green)}.av-yes .avdot{background:var(--green)}
+.av-no{color:var(--red)}.av-no .avdot{background:var(--red)}
+.bc-foot{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+
+/* ── COLLECT PAGE ── */
+.collect-search-area{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px}
+.collect-search-title{font-size:.72rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);font-weight:700;margin-bottom:12px}
+.collect-row{display:flex;gap:10px;align-items:flex-end}
+.collect-row .fg{flex:1;margin-bottom:0}
+
+/* ── ISSUE PAGE ── */
+.issue-form{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:640px}
+.issue-title{font-family:var(--font-display);font-size:1.15rem;margin-bottom:20px}
+
+/* ── TABS (Malpractice) ── */
+.tabs{display:flex;gap:4px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:4px;width:fit-content;margin-bottom:20px}
+.tab-btn{padding:7px 18px;border-radius:6px;border:none;background:none;font-family:var(--font);font-size:.8rem;font-weight:600;color:var(--muted);cursor:pointer;transition:all .18s;display:flex;align-items:center;gap:6px}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.tab-panel{display:none}
+.tab-panel.active{display:block;animation:fadeIn .2s}
+
+/* ── MALPRACTICE SUMMARY CARDS ── */
+.mal-summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:13px;margin-bottom:22px}
+.mal-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;display:flex;align-items:center;gap:14px}
+.mal-card-ico{font-size:1.8rem;flex-shrink:0}
+.mal-card-label{font-size:.68rem;text-transform:uppercase;letter-spacing:1.3px;color:var(--muted);font-weight:600;margin-bottom:4px}
+.mal-card-val{font-family:var(--font-display);font-size:1.7rem;line-height:1}
+.mal-card-sub{font-size:.7rem;color:var(--muted);margin-top:3px}
+.mc-amber .mal-card-val{color:var(--amber)}
+.mc-red .mal-card-val{color:var(--red)}
+
+/* ── PENALTY BADGE ── */
+.pen-pill{display:inline-flex;align-items:center;font-size:.68rem;padding:1px 8px;border-radius:99px}
+.pp-pending{background:rgba(251,191,36,.1);color:var(--amber);border:1px solid rgba(251,191,36,.2)}
+.pp-overdue{background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.2)}
+
+/* ── COLLECT RESULT ── */
+.collect-result{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:16px;display:none}
+.collect-result.show{display:block}
+.cr-book{font-weight:700;font-size:.9rem}
+.cr-meta{font-size:.75rem;color:var(--muted);margin-top:3px}
+
+/* ── SCANNER ── */
+.scanner-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:18px}
+.scanner-hdr{font-size:.7rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);font-weight:700;margin-bottom:12px}
+.scan-row{display:flex;gap:10px;align-items:flex-end}
+.scan-row .fg{flex:1;margin-bottom:0}
+
+/* ── TOAST ── */
+.toast-container{position:fixed;bottom:22px;right:22px;z-index:999;display:flex;flex-direction:column;gap:7px}
+.toast{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 16px;display:flex;align-items:center;gap:9px;min-width:240px;max-width:340px;box-shadow:var(--shadow);animation:toastIn .28s cubic-bezier(.16,1,.3,1);font-size:.8rem}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+.toast-success{border-left:3px solid var(--green)}
+.toast-error{border-left:3px solid var(--red)}
+.toast-info{border-left:3px solid var(--accent)}
+.toast-warn{border-left:3px solid var(--amber)}
+
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%)}.main{margin-left:0}.content{padding:14px}
+  .frow{grid-template-columns:1fr}.stats-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     SIDEBAR
+══════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-title">LibraCore</div>
+    <div class="logo-sub">Library Management</div>
+  </div>
+  <nav class="nav">
+
+    <button class="nav-item active" data-page="dashboard" onclick="navigate('dashboard')">
+      <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </button>
+
+    <div class="nav-sep"></div>
+    <div class="nav-label">Library Actions</div>
+
+    <button class="nav-item" data-page="issue" onclick="navigate('issue')">
+      <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+      Issue Book
+    </button>
+
+    <button class="nav-item" data-page="collect" onclick="navigate('collect')">
+      <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+      Collect Book
+    </button>
+
+    <div class="nav-sep"></div>
+    <div class="nav-label">Records</div>
+
+    <button class="nav-item" data-page="transactions" onclick="navigate('transactions')">
+      <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      Transactions / Logs
+      <span class="nav-badge nb-blue" id="nb-pending">0</span>
+    </button>
+
+    <button class="nav-item" data-page="books" onclick="navigate('books')">
+      <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+      Book Catalogue
+    </button>
+
+    <div class="nav-sep"></div>
+    <div class="nav-label">Enforcement</div>
+
+    <button class="nav-item" data-page="malpractice" onclick="navigate('malpractice')">
+      <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+      Malpractice
+      <span class="nav-badge nb-orange" id="nb-mal">0</span>
+    </button>
+
+    <div class="nav-sep"></div>
+    <div class="nav-label">Scanner</div>
+
+    <button class="nav-item" data-page="scanner" onclick="navigate('scanner')">
+      <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/><rect x="3" y="16" width="5" height="5" rx="1"/><path d="M16 16h5v5h-5zM11 3v5M3 11h5M16 11h5M11 16v5M11 11h.01"/></svg>
+      Connect Scanner
+      <span class="nav-badge nb-blue" id="nb-scanner" style="display:none">●</span>
+    </button>
+
+    <div class="nav-sep"></div>
+
+  </nav>
+  <div class="sidebar-footer">
+    <div style="font-weight:600;margin-bottom:1px">School Library</div>
+    <div>Librarian Portal v3.0</div>
+  </div>
+</aside>
+
+<!-- ══════════════════════════════════════
+     MAIN
+══════════════════════════════════════ -->
+<main class="main">
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title" id="page-title">Dashboard</div>
+      <div class="topbar-tag" id="page-tag">Overview</div>
+    </div>
+    <div class="topbar-actions">
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- ════════ DASHBOARD ════════ -->
+    <section class="page active" id="page-dashboard">
+      <div class="stats-grid" id="dash-stats"></div>
+      <div id="dash-overdue-bar" class="alert-bar ab-red hidden">
+        <span>⚠️</span><span id="dash-overdue-txt"></span>
+      </div>
+      <!-- Malpractice summary on dashboard -->
+      <div class="section-header">
+        <div class="section-title">Malpractice Overview</div>
+        <button class="btn btn-ghost btn-sm" onclick="navigate('malpractice')">View All →</button>
+      </div>
+      <div class="mal-summary">
+        <div class="mal-card mc-amber">
+          <div class="mal-card-ico">⚠️</div>
+          <div>
+            <div class="mal-card-label">Damaged Books</div>
+            <div class="mal-card-val" id="dash-dmg-count">0</div>
+            <div class="mal-card-sub">Pending penalty recovery</div>
+          </div>
+        </div>
+        <div class="mal-card mc-red">
+          <div class="mal-card-ico">❌</div>
+          <div>
+            <div class="mal-card-label">Lost Books</div>
+            <div class="mal-card-val" id="dash-lost-count">0</div>
+            <div class="mal-card-sub">Pending penalty recovery</div>
+          </div>
+        </div>
+      </div>
+      <div class="section-header">
+        <div class="section-title">Recent Malpractice Records</div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table>
+<thead><tr>
+              <th>Book</th><th>Student</th><th>Type</th>
+              <th>Date</th><th>Penalty Due</th><th>Penalty Amt</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="dash-mal-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════ ISSUE BOOK ════════ -->
+    <section class="page" id="page-issue">
+      <div class="issue-form">
+        <div class="issue-title">Issue a Book to Student</div>
+        <div class="frow">
+          <div class="fg">
+            <label class="fl">Book</label>
+            <select class="input ni" id="issue-book"></select>
+          </div>
+          <div class="fg">
+            <label class="fl">Student UID</label>
+            <input class="input ni" type="text" id="issue-uid" placeholder="e.g. STU-2024-001"/>
+          </div>
+        </div>
+        <div class="frow">
+          <div class="fg">
+            <label class="fl">Issue Date</label>
+            <input class="input ni" type="date" id="issue-date"/>
+          </div>
+          <div class="fg">
+            <label class="fl">Return Duration</label>
+            <select class="input ni" id="issue-dur">
+              <option value="7">7 days</option>
+              <option value="14" selected>14 days</option>
+              <option value="21">21 days</option>
+              <option value="30">30 days</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:9px">
+          <button class="btn btn-primary" onclick="issueBook()">Issue Book</button>
+          <button class="btn btn-ghost" onclick="clearIssueForm()">Clear</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════ COLLECT BOOK ════════ -->
+    <section class="page" id="page-collect">
+      <div class="collect-search-area">
+        <div class="collect-search-title">🔍 Find Active Transaction</div>
+        <div class="collect-row">
+          <div class="fg">
+            <label class="fl">Student UID or Book ID</label>
+            <input class="input ni" type="text" id="collect-query" placeholder="Enter Student UID or Book ID…" oninput="collectSearch()"/>
+          </div>
+        </div>
+      </div>
+      <div id="collect-results-wrap"></div>
+    </section>
+
+    <!-- ════════ TRANSACTIONS / LOGS ════════ -->
+<section class="page" id="page-transactions">
+      <div class="filters">
+        <div class="search-wrap">
+          <svg class="si" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input class="input" type="text" placeholder="Search by book, student…" id="txn-search" oninput="renderTxnTable()"/>
+        </div>
+        <select class="input ni" style="width:130px" id="txn-filter" onchange="renderTxnTable()">
+          <option value="">All Status</option>
+          <option value="Pending">Pending</option>
+          <option value="Overdue">Overdue</option>
+        </select>
+      </div>
+      <div id="txn-overdue-bar" class="alert-bar ab-red hidden" style="margin-bottom:14px">
+        <span>⚠️</span><span id="txn-overdue-txt"></span>
+      </div>
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table>
+            <thead><tr>
+              <th>Book</th><th>Student</th><th>Issue Date</th>
+              <th>Due Date</th><th>Status</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="txn-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════ BOOK CATALOGUE ════════ -->  
+
+    <section class="page" id="page-books">
+<div class="section-header" style="margin-bottom:24px;">
+        <h2 class="section-title" style="font-size:1.3rem;">Book Catalogue</h2>
+      </div>
+      <div style="background:linear-gradient(135deg, var(--surface2), rgba(108,143,255,.08)); border:2px solid var(--accent); border-radius:var(--radius); padding:32px; text-align:center; margin-bottom:28px; box-shadow:0 8px 32px rgba(108,143,255,.12);">
+        <div style="font-family:var(--font-display); font-size:1.6rem; color:var(--accent); margin-bottom:12px; font-weight:600;">➕ Add New Book</div>
+        <div style="font-size:.9rem; color:var(--muted); margin-bottom:20px;">Register new titles to the library catalogue</div>
+        <button class="btn btn-primary" style="font-size:1.1rem; padding:14px 32px;" onclick="openModal('add-book-modal')">+ Add Book</button>
+      </div>
+      <div class="filters">
+        <div class="search-wrap">
+          <svg class="si" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input class="input" type="text" placeholder="Search books, authors…" id="book-search" oninput="renderBooks()"/>
+        </div>
+      </div>
+      <div class="books-grid" id="books-grid"></div>
+    </section>
+
+    <!-- ════════ MALPRACTICE ════════ -->
+    <section class="page" id="page-malpractice">
+      <div class="tabs">
+        <button class="tab-btn active" id="tab-damaged" onclick="setTab('damaged')">⚠️ Damaged Books <span id="tab-dmg-cnt" class="nav-badge nb-amber" style="margin-left:4px">0</span></button>
+        <button class="tab-btn" id="tab-lost" onclick="setTab('lost')">❌ Lost Books <span id="tab-lost-cnt" class="nav-badge nb-red" style="margin-left:4px">0</span></button>
+      </div>
+
+      <div class="tab-panel active" id="panel-damaged">
+        <div class="table-wrap">
+          <div class="table-scroll">
+            <table>
+<thead><tr>
+                <th>Book</th><th>Student</th><th>Damaged On</th>
+                <th>Penalty Due</th><th>Penalty Amt</th><th>Penalty Status</th><th>Actions</th>
+              </tr></thead>
+              <tbody id="damaged-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="panel-lost">
+        <div class="table-wrap">
+          <div class="table-scroll">
+            <table>
+<thead><tr>
+                <th>Book</th><th>Student</th><th>Reported On</th>
+                <th>Penalty Due</th><th>Penalty Amt</th><th>Penalty Status</th><th>Actions</th>
+              </tr></thead>
+              <tbody id="lost-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════ CONNECT SCANNER (new — no existing code changed) ════════ -->
+    <section class="page" id="page-scanner">
+      <div class="scanner-box" style="max-width:520px">
+        <div class="scanner-hdr">📱 Connect Scanner</div>
+        <div style="margin-bottom:16px;font-size:.82rem;color:var(--muted)">
+          Open the LibraCore Scanner app on your Android phone, enter the code below, then scan any book QR.
+        </div>
+
+        <!-- Session code display -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:18px;margin-bottom:14px;text-align:center">
+          <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:1.8px;color:var(--muted);font-weight:700;margin-bottom:8px">Session Code</div>
+          <div id="ws-session-code" style="font-family:monospace;font-size:2rem;letter-spacing:.35rem;color:var(--accent);font-weight:700">——————</div>
+          <div style="margin-top:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+            <button class="btn btn-ghost btn-sm" onclick="wsCopyCode()">📋 Copy Code</button>
+            <button class="btn btn-ghost btn-sm" onclick="wsRegenCode()">🔄 New Code</button>
+          </div>
+        </div>
+
+        <!-- Server URL input -->
+        <div class="fg">
+          <label class="fl">Server URL (WebSocket)</label>
+          <div style="display:flex;gap:8px">
+            <input class="input ni" type="text" id="ws-server-url" placeholder="ws://YOUR_PC_IP:8765" style="flex:1"/>
+            <button class="btn btn-primary btn-sm" onclick="wsConnect()" id="ws-connect-btn">Connect</button>
+          </div>
+          <div style="font-size:.68rem;color:var(--muted);margin-top:4px">Run <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">node server/server.js</code> on your PC, then use <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">ws://&lt;your-pc-ip&gt;:8765</code></div>
+        </div>
+
+        <!-- Status row -->
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm)">
+          <div id="ws-status-dot" style="width:9px;height:9px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:background .3s"></div>
+          <div id="ws-status-text" style="font-size:.8rem;color:var(--muted);flex:1">Not connected to server</div>
+          <div id="ws-phone-dot" style="width:9px;height:9px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:background .3s"></div>
+          <div id="ws-phone-text" style="font-size:.8rem;color:var(--muted)">No phone</div>
+        </div>
+
+        <!-- Last scan result -->
+        <div id="ws-last-scan" style="display:none;margin-top:12px;background:rgba(52,211,153,.07);border:1px solid rgba(52,211,153,.22);border-radius:var(--radius-sm);padding:11px 14px">
+          <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:1.4px;color:var(--green);font-weight:700;margin-bottom:4px">Last Scan Received</div>
+          <div id="ws-last-scan-data" style="font-family:monospace;font-size:.82rem;color:var(--text)"></div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<!-- ══════════════════════════════════════
+     TOAST CONTAINER
+══════════════════════════════════════ -->
+<div class="toast-container" id="toasts"></div>
+
+<!-- ══════════════════════════════════════
+     MODALS
+══════════════════════════════════════ -->
+
+<!-- ── RETURN TYPE MODAL (THE CRITICAL NEW ONE) ── -->
+<div class="overlay" id="return-modal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div>
+        <div class="modal-title">Collect Book</div>
+        <div class="modal-sub" id="return-modal-sub">Select the return condition</div>
+      </div>
+      <button class="xbtn" onclick="closeModal('return-modal')">✕</button>
+    </div>
+    <input type="hidden" id="return-txn-id"/>
+    <div class="return-choices">
+      <div class="rc rc-normal selected" id="rc-normal" onclick="selectReturn('normal')">
+        <div class="rc-icon">✅</div>
+        <div>
+          <div class="rc-label" style="color:var(--green)">Returned Normally</div>
+          <div class="rc-sub">Book is in good condition. Record closed.</div>
+        </div>
+        <div class="rc-check" id="rck-normal">✓</div>
+      </div>
+      <div class="rc rc-damaged" id="rc-damaged" onclick="selectReturn('damaged')">
+        <div class="rc-icon">⚠️</div>
+        <div>
+          <div class="rc-label" style="color:var(--amber)">Damaged</div>
+          <div class="rc-sub">Book returned with damage. Penalty applies.</div>
+        </div>
+        <div class="rc-check" id="rck-damaged"></div>
+      </div>
+      <div class="rc rc-lost" id="rc-lost" onclick="selectReturn('lost')">
+        <div class="rc-icon">❌</div>
+        <div>
+          <div class="rc-label" style="color:var(--red)">Lost</div>
+          <div class="rc-sub">Book not returned. Full replacement penalty.</div>
+        </div>
+        <div class="rc-check" id="rck-lost"></div>
+      </div>
+    </div>
+    <!-- Penalty section shown for damaged / lost -->
+    <div id="penalty-section" class="penalty-section">
+      <div style="height:1px;background:var(--border);margin-bottom:14px"></div>
+      <div class="fg">
+        <label class="fl">Penalty Due Date</label>
+        <input class="input ni" type="date" id="penalty-due-date"/>
+      </div>
+      <div class="fg">
+        <label class="fl">Notes (optional)</label>
+        <input class="input ni" type="text" id="penalty-notes" placeholder="Describe damage or circumstances…"/>
+      </div>
+      <div class="fg">
+        <label class="fl">Penalty Amount</label>
+        <input class="input ni" type="number" id="penalty-amount" min="0" step="0.01" placeholder="e.g. 50.00"/>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('return-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmReturn()">Confirm Return</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── QR SCAN ACTION MODAL ── -->
+<div class="overlay" id="scan-modal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div>
+        <div class="modal-title" id="scan-modal-title">Book Scanned</div>
+        <div class="modal-sub" id="scan-modal-sub">Perform an action</div>
+      </div>
+      <button class="xbtn" onclick="closeModal('scan-modal')">✕</button>
+    </div>
+    <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:14px;margin-bottom:14px">
+      <div class="fg" style="margin-bottom:0">
+        <label class="fl">Student UID</label>
+        <input class="input ni" type="text" id="scan-uid" placeholder="Enter Student UID"/>
+      </div>
+    </div>
+    <div class="ac-grid">
+      <div class="ac sel" id="ac-take" onclick="selectScanAction('take')">
+        <div class="ac-ico">📤</div>
+        <div class="ac-lbl">Issue Book</div>
+        <div class="ac-sub">Lend to student</div>
+      </div>
+      <div class="ac" id="ac-ret" onclick="selectScanAction('return')">
+        <div class="ac-ico">📥</div>
+        <div class="ac-lbl">Collect Book</div>
+        <div class="ac-sub">Start return flow</div>
+      </div>
+    </div>
+    <div id="scan-dur-wrap" class="fg">
+      <label class="fl">Return Duration</label>
+      <select class="input ni" id="scan-dur">
+        <option value="7">7 days</option>
+        <option value="14" selected>14 days</option>
+        <option value="21">21 days</option>
+        <option value="30">30 days</option>
+      </select>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('scan-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmScanAction()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── QR VIEW MODAL ── -->
+<div class="overlay" id="qr-modal">
+  <div class="modal" style="text-align:center">
+    <div class="modal-hdr">
+      <div>
+        <div class="modal-title" id="qr-modal-title">QR Code</div>
+        <div class="modal-sub" id="qr-modal-sub"></div>
+      </div>
+      <button class="xbtn" onclick="closeModal('qr-modal')">✕</button>
+    </div>
+    <div class="qr-display"><div id="qr-canvas"></div></div>
+    <div class="qr-actions">
+      <button class="btn btn-ghost" onclick="dlQR()">⬇ Download PNG</button>
+      <button class="btn btn-primary" onclick="scanFromQRModal()">📷 Simulate Scan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── EDIT TRANSACTION MODAL ── -->
+<div class="overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div><div class="modal-title">Edit Transaction</div><div class="modal-sub">Update lending record</div></div>
+      <button class="xbtn" onclick="closeModal('edit-modal')">✕</button>
+    </div>
+    <input type="hidden" id="edit-id"/>
+    <div class="fg">
+      <label class="fl">Student UID</label>
+      <input class="input ni" type="text" id="edit-uid"/>
+    </div>
+    <div class="frow">
+      <div class="fg">
+        <label class="fl">Issue Date</label>
+        <input class="input ni" type="date" id="edit-issue"/>
+      </div>
+      <div class="fg">
+        <label class="fl">Due Date</label>
+        <input class="input ni" type="date" id="edit-due"/>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('edit-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADD BOOK MODAL ── -->
+<div class="overlay" id="add-book-modal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div><div class="modal-title">Add New Book</div><div class="modal-sub">Register to catalogue</div></div>
+      <button class="xbtn" onclick="closeModal('add-book-modal')">✕</button>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Title</label><input class="input ni" type="text" id="ab-title" placeholder="Book Title"/></div>
+      <div class="fg"><label class="fl">Author</label><input class="input ni" type="text" id="ab-author" placeholder="Author Name"/></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Genre</label><input class="input ni" type="text" id="ab-genre" placeholder="e.g. Science"/></div>
+      <div class="fg"><label class="fl">Total Copies</label><input class="input ni" type="number" id="ab-copies" value="1" min="1"/></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('add-book-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveBook()">Add Book</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════ -->
+<script>
+/* ═══════════════════════════════════════════
+   STATE — single source of truth
+═══════════════════════════════════════════ */
+let books = [
+  {id:'BK001',title:'To Kill a Mockingbird',author:'Harper Lee',genre:'Classic',copies:3},
+  {id:'BK002',title:'The Great Gatsby',author:'F. Scott Fitzgerald',genre:'Classic',copies:2},
+  {id:'BK003',title:'1984',author:'George Orwell',genre:'Dystopian',copies:4},
+  {id:'BK004',title:'Pride and Prejudice',author:'Jane Austen',genre:'Romance',copies:2},
+  {id:'BK005',title:'The Alchemist',author:'Paulo Coelho',genre:'Fiction',copies:3},
+  {id:'BK006',title:"Harry Potter & the Sorcerer's Stone",author:'J.K. Rowling',genre:'Fantasy',copies:5},
+  {id:'BK007',title:'The Catcher in the Rye',author:'J.D. Salinger',genre:'Classic',copies:2},
+  {id:'BK008',title:'Lord of the Flies',author:'William Golding',genre:'Classic',copies:3},
+];
+
+// Active lending records — only Pending / Overdue
+let transactions = [];
+// Malpractice records
+let damagedRecords = [];
+let lostRecords    = [];
+
+let students = {
+  'STU-2024-001': {name: 'Alice Johnson', gradeSection: '10-A'},
+  'STU-2024-002': {name: 'Bob Smith', gradeSection: '11-B'},
+  'STU-2024-003': {name: 'Carol Davis', gradeSection: '12-C'},
+  'STU-2024-005': {name: 'David Wilson', gradeSection: '9-D'},
+  'STU-2024-007': {name: 'Eva Brown', gradeSection: '10-E'},
+  'STU-2024-010': {name: 'Frank Miller', gradeSection: '11-F'},
+  'STU-2024-011': {name: 'Grace Lee', gradeSection: '12-G'},
+  'STU-2024-012': {name: 'Henry Garcia', gradeSection: '9-H'},
+  'STU-2024-015': {name: 'Ivy Taylor', gradeSection: '10-I'},
+  'STU-2024-020': {name: 'Jack White', gradeSection: '11-J'},
+  'STU-2024-025': {name: 'Kara Green', gradeSection: '12-K'},
+  'STU-2024-030': {name: 'Leo Black', gradeSection: '9-L'},
+  'STU-2024-035': {name: 'Mia Adams', gradeSection: '10-M'},
+  'STU-2024-040': {name: 'Noah Clark', gradeSection: '11-N'},
+  'STU-2024-045': {name: 'Olivia Hall', gradeSection: '12-O'}
+};
+
+function getStudentDisplay(uid) {
+  const s = students[uid] || {name: uid, gradeSection: 'Unknown'};
+  return `<div style="font-weight:600;">${s.name}</div><div style="font-size:.72rem;color:var(--muted);">${s.gradeSection}</div>`;
+}
+
+function fmtCurrency(n) {
+  return new Intl.NumberFormat('en-US', {style: 'currency', currency: 'USD', minimumFractionDigits: 0}).format(n || 0);
+}
+
+// Transient state
+let qrBookId     = null;
+let returnType   = 'normal';
+
+/* ═══════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════ */
+function init() {
+  const today = new Date().toISOString().split('T')[0];
+  const add   = (d,n) => addDays(d,n);
+
+  // Seed sample active transactions
+  transactions = [
+    mkTxn('BK001','STU-2024-001', add(today,-10), add(today,4)),
+    mkTxn('BK003','STU-2024-002', add(today,-20), add(today,-6)),
+    mkTxn('BK006','STU-2024-003', add(today,-5),  add(today,9)),
+    mkTxn('BK007','STU-2024-005', add(today,-8),  add(today,-2)),
+    mkTxn('BK004','STU-2024-007', add(today,-3),  add(today,11)),
+  ];
+
+  // Seed some malpractice records
+  damagedRecords = [
+    mkMal('damaged','BK002','STU-2024-010', add(today,-15), add(today,15), 25, 'Torn cover and water damage'),
+    mkMal('damaged','BK005','STU-2024-011', add(today,-5),  add(today,25), 75, 'Pages torn out'),
+  ];
+  lostRecords = [
+    mkMal('lost','BK008','STU-2024-012', add(today,-20), add(today,-5),  150, 'Not returned after follow-up'),
+  ];
+
+  document.getElementById('issue-date').value = today;
+  buildAllSelects();
+  buildQRGrid();
+  render();
+}
+
+function mkTxn(bookId, uid, issueDate, dueDate) {
+  return {
+    id: 'TXN' + Date.now() + Math.random().toString(36).slice(2,5),
+    bookId, uid, issueDate, dueDate,
+    status: computeStatus(dueDate)
+  };
+}
+
+function mkMal(type, bookId, uid, date, penaltyDue, penaltyAmount=0, notes='') {
+  return {
+    id: (type==='damaged'?'DMG':'LST') + Date.now() + Math.random().toString(36).slice(2,5),
+    type, bookId, uid, date, penaltyDue, penaltyAmount, notes
+  };
+}
+
+/* ═══════════════════════════════════════════
+   STATUS
+═══════════════════════════════════════════ */
+function computeStatus(dueDate) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const due   = new Date(dueDate+'T00:00:00');
+  return due < today ? 'Overdue' : 'Pending';
+}
+
+function refreshStatuses() {
+  transactions.forEach(t => { t.status = computeStatus(t.dueDate); });
+}
+
+/* ═══════════════════════════════════════════
+   MASTER RENDER
+═══════════════════════════════════════════ */
+function render() {
+  refreshStatuses();
+  renderDashboard();
+  renderTxnTable();
+  renderDamagedTable();
+  renderLostTable();
+  updateBadges();
+}
+
+/* ─── DASHBOARD ─── */
+function renderDashboard() {
+  const pending  = transactions.filter(t=>t.status==='Pending').length;
+  const overdue  = transactions.filter(t=>t.status==='Overdue').length;
+  const dmgCount = damagedRecords.length;
+  const lstCount = lostRecords.length;
+  const total    = transactions.length + dmgCount + lstCount;
+
+  document.getElementById('dash-stats').innerHTML = `
+    <div class="stat-card s-blue"><div class="stat-ico">📋</div><div class="stat-label">Active Loans</div><div class="stat-value">${transactions.length}</div><div class="stat-sub">Currently issued</div></div>
+    <div class="stat-card s-red"><div class="stat-ico">⚠️</div><div class="stat-label">Overdue</div><div class="stat-value">${overdue}</div><div class="stat-sub">${overdue>0?'Needs attention':'All on time'}</div></div>
+    <div class="stat-card s-amber"><div class="stat-ico">⚠️</div><div class="stat-label">Damaged</div><div class="stat-value">${dmgCount}</div><div class="stat-sub">Penalty pending</div></div>
+    <div class="stat-card s-red"><div class="stat-ico">❌</div><div class="stat-label">Lost</div><div class="stat-value">${lstCount}</div><div class="stat-sub">Penalty pending</div></div>
+    <div class="stat-card s-purple"><div class="stat-ico">📚</div><div class="stat-label">Total Records</div><div class="stat-value">${total}</div><div class="stat-sub">All time</div></div>
+  `;
+
+  // Overdue banner
+  const bar = document.getElementById('dash-overdue-bar');
+  if (overdue > 0) {
+    bar.classList.remove('hidden');
+    document.getElementById('dash-overdue-txt').textContent = `${overdue} book${overdue>1?'s are':' is'} overdue — please follow up with the students immediately.`;
+  } else bar.classList.add('hidden');
+
+  // Malpractice summary counts
+  document.getElementById('dash-dmg-count').textContent  = dmgCount;
+  document.getElementById('dash-lost-count').textContent = lstCount;
+
+  // Recent malpractice table on dashboard
+  const allMal = [
+    ...damagedRecords.map(r=>({...r, _type:'damaged'})),
+    ...lostRecords.map(r=>({...r, _type:'lost'}))
+  ].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,6);
+
+  const tbody = document.getElementById('dash-mal-tbody');
+  if (!allMal.length) {
+    tbody.innerHTML = emptyRow(7,'No malpractice records yet. 🎉');
+    return;
+  }
+  tbody.innerHTML = allMal.map(r => {
+    const book = books.find(b=>b.id===r.bookId)||{title:r.bookId};
+    const today = new Date(); today.setHours(0,0,0,0);
+    const pd = new Date(r.penaltyDue+'T00:00:00');
+    const penClass = pd < today ? 'pp-overdue' : 'pp-pending';
+    const penLabel = pd < today ? '⚠ Overdue' : 'Pending';
+    return `<tr class="${r._type==='damaged'?'row-damaged':'row-lost'}">
+      <td><div class="book-name">${book.title}</div><div class="book-id">${book.id}</div></td>
+      <td>${getStudentDisplay(r.uid)}</td>
+      <td><span class="badge ${r._type==='damaged'?'b-damaged':'b-lost'}">${r._type==='damaged'?'⚠️ Damaged':'❌ Lost'}</span></td>
+      <td>${fmtDate(r.date)}</td>
+      <td>${fmtDate(r.penaltyDue)}<br/><span class="pen-pill ${penClass}">${penLabel}</span></td>
+      <td>${fmtCurrency(r.penaltyAmount)}</td>
+      <td><div class="actions-cell">
+        <button class="ib ib-del" title="Remove" onclick="deleteMal('${r.id}','${r._type}')">✕</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ─── TRANSACTIONS TABLE ─── */
+function renderTxnTable() {
+  const search = (document.getElementById('txn-search')||{value:''}).value.toLowerCase();
+  const filter = (document.getElementById('txn-filter')||{value:''}).value;
+  let list = [...transactions].sort((a,b)=>new Date(b.issueDate)-new Date(a.issueDate));
+  if (filter) list = list.filter(t=>t.status===filter);
+  if (search) list = list.filter(t=>{
+    const b = books.find(x=>x.id===t.bookId)||{title:''};
+    return b.title.toLowerCase().includes(search)||t.uid.toLowerCase().includes(search)||t.bookId.toLowerCase().includes(search);
+  });
+
+  const overdue = transactions.filter(t=>t.status==='Overdue').length;
+  const txnBar  = document.getElementById('txn-overdue-bar');
+  if (txnBar) {
+    if (overdue>0) { txnBar.classList.remove('hidden'); document.getElementById('txn-overdue-txt').textContent=`${overdue} overdue record${overdue>1?'s':''} in the current view.`; }
+    else txnBar.classList.add('hidden');
+  }
+
+  const tbody = document.getElementById('txn-tbody');
+  if (!tbody) return;
+  if (!list.length) { tbody.innerHTML = emptyRow(6,'No active transactions. All books returned!'); return; }
+  tbody.innerHTML = list.map(t => {
+    const book = books.find(b=>b.id===t.bookId)||{title:t.bookId};
+    const today = new Date(); today.setHours(0,0,0,0);
+    const due   = new Date(t.dueDate+'T00:00:00');
+    const dl    = Math.round((due-today)/86400000);
+    let dpill = '';
+    if (t.status==='Overdue') dpill = `<span class="dpill dp-over">⚠ ${Math.abs(dl)}d overdue</span>`;
+    else if (dl<=3) dpill = `<span class="dpill dp-soon">⏰ ${dl}d left</span>`;
+    else dpill = `<span class="dpill dp-ok">✓ ${dl}d left</span>`;
+    const bc = t.status==='Overdue' ? 'b-overdue' : 'b-pending';
+    return `<tr class="${t.status==='Overdue'?'row-overdue':''}" id="row-${t.id}">
+      <td><div class="book-name">${book.title}</div><div class="book-id">${book.id}</div></td>
+      <td>${getStudentDisplay(t.uid)}</td>
+      <td>${fmtDate(t.issueDate)}</td>
+      <td>${fmtDate(t.dueDate)}<br/>${dpill}</td>
+      <td><span class="badge ${bc}"><span class="bdot"></span>${t.status}</span></td>
+      <td><div class="actions-cell">
+        <button class="ib ib-ret" title="Collect Book" onclick="openReturnModal('${t.id}')">↩</button>
+        <button class="ib ib-edit" title="Edit" onclick="openEdit('${t.id}')">✎</button>
+        <button class="ib ib-qr" title="View QR" onclick="openQRModal('${t.bookId}')">⊞</button>
+        <button class="ib ib-del" title="Delete" onclick="deleteRow('${t.id}')">✕</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ─── DAMAGED TABLE ─── */
+function renderDamagedTable() {
+  const tbody = document.getElementById('damaged-tbody');
+  if (!tbody) return;
+  if (!damagedRecords.length) { tbody.innerHTML = emptyRow(7,'No damaged book records.'); return; }
+  const today = new Date(); today.setHours(0,0,0,0);
+  tbody.innerHTML = damagedRecords.map(r => {
+    const book = books.find(b=>b.id===r.bookId)||{title:r.bookId};
+    const pd = new Date(r.penaltyDue+'T00:00:00');
+    const penClass = pd < today ? 'pp-overdue' : 'pp-pending';
+    const penLabel = pd < today ? '⚠ Penalty Overdue' : 'Pending Payment';
+    return `<tr class="row-damaged">
+      <td><div class="book-name">${book.title}</div><div class="book-id">${book.id}</div>${r.notes?`<div class="book-id" style="color:var(--amber);margin-top:2px">📝 ${r.notes}</div>`:''}</td>
+      <td>${getStudentDisplay(r.uid)}</td>
+      <td>${fmtDate(r.date)}</td>
+       <td>${fmtDate(r.penaltyDue)}</td>
+       <td>${fmtCurrency(r.penaltyAmount)}</td>
+       <td><span class="pen-pill ${penClass}">${penLabel}</span></td>
+       <td><div class="actions-cell">
+         <button class="btn btn-success btn-sm" onclick="clearPenalty('${r.id}','damaged')">✓ Cleared</button>
+         <button class="ib ib-del" title="Remove" onclick="deleteMal('${r.id}','damaged')">✕</button>
+       </div></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('tab-dmg-cnt').textContent = damagedRecords.length;
+}
+
+/* ─── LOST TABLE ─── */
+function renderLostTable() {
+  const tbody = document.getElementById('lost-tbody');
+  if (!tbody) return;
+  if (!lostRecords.length) { tbody.innerHTML = emptyRow(7,'No lost book records.'); return; }
+  const today = new Date(); today.setHours(0,0,0,0);
+  tbody.innerHTML = lostRecords.map(r => {
+    const book = books.find(b=>b.id===r.bookId)||{title:r.bookId};
+    const pd = new Date(r.penaltyDue+'T00:00:00');
+    const penClass = pd < today ? 'pp-overdue' : 'pp-pending';
+    const penLabel = pd < today ? '⚠ Penalty Overdue' : 'Pending Payment';
+    return `<tr class="row-lost">
+      <td><div class="book-name">${book.title}</div><div class="book-id">${book.id}</div>${r.notes?`<div class="book-id" style="color:var(--red);margin-top:2px">📝 ${r.notes}</div>`:''}</td>
+      <td>${getStudentDisplay(r.uid)}</td>
+      <td>${fmtDate(r.date)}</td>
+       <td>${fmtDate(r.penaltyDue)}</td>
+       <td>${fmtCurrency(r.penaltyAmount)}</td>
+       <td><span class="pen-pill ${penClass}">${penLabel}</span></td>
+       <td><div class="actions-cell">
+         <button class="btn btn-success btn-sm" onclick="clearPenalty('${r.id}','lost')">✓ Cleared</button>
+         <button class="ib ib-del" title="Remove" onclick="deleteMal('${r.id}','lost')">✕</button>
+       </div></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('tab-lost-cnt').textContent = lostRecords.length;
+}
+
+/* ─── BOOKS ─── */
+function renderBooks() {
+  const search = document.getElementById('book-search').value.toLowerCase();
+  const list = books.filter(b=>!search||b.title.toLowerCase().includes(search)||b.author.toLowerCase().includes(search));
+  document.getElementById('books-grid').innerHTML = list.map(b=>{
+    const issued = transactions.filter(t=>t.bookId===b.id).length;
+    const avail  = Math.max(0, b.copies - issued);
+    return `<div class="book-card">
+      <div class="bc-hdr">
+        <div><div class="bc-title">${b.title}</div><div class="bc-author">${b.author}</div></div>
+        <div class="bc-id">${b.id}</div>
+      </div>
+      <div style="font-size:.75rem;color:var(--muted)">${b.genre}</div>
+      <div class="bc-foot">
+        <span class="bc-avail ${avail>0?'av-yes':'av-no'}"><span class="avdot"></span>${avail>0?avail+' available':'Unavailable'}</span>
+        <span style="font-size:.72rem;color:var(--muted)">/ ${b.copies} total</span>
+      </div>
+      <div class="bc-foot">
+        <button class="btn btn-ghost btn-sm" onclick="openQRModal('${b.id}')">View QR</button>
+        ${avail>0?`<button class="btn btn-primary btn-sm" onclick="quickIssue('${b.id}')">Issue</button>`:'<span style="font-size:.72rem;color:var(--red)">None available</span>'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ─── COLLECT PAGE ─── */
+function collectSearch() {
+  const q = (document.getElementById('collect-query')||{value:''}).value.trim().toLowerCase();
+  const wrap = document.getElementById('collect-results-wrap');
+  if (!wrap) return;
+  
+  let matches = [...transactions].sort((a,b) => new Date(b.issueDate) - new Date(a.issueDate));
+  
+  if (q) {
+    matches = matches.filter(t => {
+      const bookTitle = (books.find(b=>b.id===t.bookId)||{title:''}).title.toLowerCase();
+      const studentName = getStudentDisplay(t.uid).toLowerCase();
+      return studentName.includes(q) || t.uid.toLowerCase().includes(q) || bookTitle.includes(q) || t.bookId.toLowerCase().includes(q);
+    });
+  }
+
+  if (!matches.length) {
+    const msg = q ? 'No active transactions match your query.' : 'No active transactions. All books returned! 🎉';
+    wrap.innerHTML = `<div class="empty"><div class="empty-ico">${q ? '🔍' : '📚'}</div>${msg}</div>`; 
+    return;
+  }
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  wrap.innerHTML = matches.map(t => {
+    const book = books.find(b=>b.id===t.bookId)||{title:t.bookId};
+    const due  = new Date(t.dueDate+'T00:00:00');
+    const dl   = Math.round((due-today)/86400000);
+    const bc   = t.status==='Overdue'?'b-overdue':'b-pending';
+    return `<div class="collect-result show" style="margin-bottom:12px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+        <div>
+          <div class="cr-book">${book.title} <span class="book-id">${book.id}</span></div>
+          <div class="cr-meta">Issued to ${getStudentDisplay(t.uid)} on ${fmtDate(t.issueDate)} · Due ${fmtDate(t.dueDate)}</div>
+          <div style="margin-top:6px"><span class="badge ${bc}"><span class="bdot"></span>${t.status}</span>${t.status==='Overdue'?`<span style="font-size:.72rem;color:var(--red);margin-left:8px">⚠ ${Math.abs(dl)}d overdue</span>`:''}</div>
+        </div>
+        <button class="btn btn-success" onclick="openReturnModal('${t.id}')">↩ Collect</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ─── NAV BADGES ─── */
+function updateBadges() {
+  const pending  = transactions.length;
+  const malTotal = damagedRecords.length + lostRecords.length;
+  const nbp = document.getElementById('nb-pending');
+  const nbm = document.getElementById('nb-mal');
+  if (nbp) nbp.textContent = pending;
+  if (nbm) nbm.textContent = malTotal;
+}
+
+/* ═══════════════════════════════════════════
+   RETURN FLOW — CRITICAL
+═══════════════════════════════════════════ */
+function openReturnModal(txnId) {
+  const t = transactions.find(x=>x.id===txnId);
+  if (!t) return;
+  const book = books.find(b=>b.id===t.bookId)||{title:t.bookId};
+  document.getElementById('return-txn-id').value = txnId;
+  document.getElementById('return-modal-sub').textContent = `"${book.title}" · ${t.uid}`;
+  // Set default penalty due = 14 days from today
+  const defPenalty = addDays(new Date().toISOString().split('T')[0], 14);
+  document.getElementById('penalty-due-date').value = defPenalty;
+  document.getElementById('penalty-notes').value = '';
+  // Reset selection
+  selectReturn('normal');
+  openModal('return-modal');
+}
+
+function selectReturn(type) {
+  returnType = type;
+  ['normal','damaged','lost'].forEach(t => {
+    document.getElementById('rc-'+t).classList.toggle('selected', t===type);
+    document.getElementById('rck-'+t).textContent = t===type ? '✓' : '';
+  });
+  const ps = document.getElementById('penalty-section');
+  ps.classList.toggle('show', type!=='normal');
+}
+
+function confirmReturn() {
+  const txnId = document.getElementById('return-txn-id').value;
+  const t = transactions.find(x=>x.id===txnId);
+  if (!t) return;
+
+  const today = new Date().toISOString().split('T')[0];
+
+  if (returnType === 'normal') {
+    // Remove from active table — no further record
+    transactions = transactions.filter(x=>x.id!==txnId);
+    showToast('Book collected and record closed ✓', 'success');
+
+  } else if (returnType === 'damaged') {
+    const penaltyDue = document.getElementById('penalty-due-date').value || addDays(today,14);
+    const penaltyAmount = parseFloat(document.getElementById('penalty-amount').value) || 0;
+    const notes = document.getElementById('penalty-notes').value.trim();
+    // Remove from active
+    transactions = transactions.filter(x=>x.id!==txnId);
+    // Add to damaged
+    damagedRecords.unshift(mkMal('damaged', t.bookId, t.uid, today, penaltyDue, penaltyAmount, notes));
+    showToast('Book marked as damaged. Malpractice record created.', 'warn');
+
+  } else if (returnType === 'lost') {
+    const penaltyDue = document.getElementById('penalty-due-date').value || addDays(today,14);
+    const penaltyAmount = parseFloat(document.getElementById('penalty-amount').value) || 0;
+    const notes = document.getElementById('penalty-notes').value.trim();
+    // Remove from active
+    transactions = transactions.filter(x=>x.id!==txnId);
+    // Add to lost
+    lostRecords.unshift(mkMal('lost', t.bookId, t.uid, today, penaltyDue, penaltyAmount, notes));
+    showToast('Book marked as lost. Malpractice record created.', 'error');
+  }
+
+  closeModal('return-modal');
+  render();
+
+  // If on collect page, refresh search
+  const cq = document.getElementById('collect-query');
+  if (cq && cq.value) collectSearch();
+}
+
+/* ═══════════════════════════════════════════
+   MALPRACTICE ACTIONS
+═══════════════════════════════════════════ */
+function clearPenalty(id, type) {
+  if (!confirm('Mark this penalty as cleared/paid?')) return;
+  if (type==='damaged') damagedRecords = damagedRecords.filter(x=>x.id!==id);
+  else lostRecords = lostRecords.filter(x=>x.id!==id);
+  showToast('Penalty cleared and record removed.', 'success');
+  render();
+}
+function deleteMal(id, type) {
+  if (!confirm('Remove this malpractice record?')) return;
+  if (type==='damaged') damagedRecords = damagedRecords.filter(x=>x.id!==id);
+  else lostRecords = lostRecords.filter(x=>x.id!==id);
+  showToast('Record removed.', 'info');
+  render();
+}
+
+/* ═══════════════════════════════════════════
+   ISSUE BOOK
+═══════════════════════════════════════════ */
+function buildAllSelects() {
+  const opts = books.map(b=>`<option value="${b.id}">${b.id} — ${b.title}</option>`).join('');
+  ['issue-book','scan-select'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.tagName==='SELECT') {
+      if (id==='scan-select') el.innerHTML = '<option value="">Choose book to simulate scan…</option>' + opts;
+      else el.innerHTML = opts;
+    }
+  });
+}
+
+function issueBook() {
+  const bookId = document.getElementById('issue-book').value;
+  const uid    = document.getElementById('issue-uid').value.trim();
+  const date   = document.getElementById('issue-date').value;
+  const dur    = parseInt(document.getElementById('issue-dur').value);
+  if (!uid)  { showToast('Please enter Student UID','error'); return; }
+  if (!date) { showToast('Please select issue date','error'); return; }
+  const book   = books.find(b=>b.id===bookId);
+  const issued = transactions.filter(t=>t.bookId===bookId).length;
+  if (book && issued>=book.copies) { showToast(`No copies of "${book.title}" available!`,'error'); return; }
+  transactions.unshift(mkTxn(bookId, uid, date, addDays(date,dur)));
+  showToast('Book issued successfully!','success');
+  render();
+  navigate('transactions');
+}
+
+function clearIssueForm() {
+  document.getElementById('issue-uid').value='';
+  document.getElementById('issue-date').value = new Date().toISOString().split('T')[0];
+}
+
+function quickIssue(bookId) {
+  navigate('issue');
+  document.getElementById('issue-book').value = bookId;
+}
+
+/* ═══════════════════════════════════════════
+   EDIT / DELETE TRANSACTION
+═══════════════════════════════════════════ */
+function openEdit(id) {
+  const t = transactions.find(x=>x.id===id); if (!t) return;
+  document.getElementById('edit-id').value    = id;
+  document.getElementById('edit-uid').value   = t.uid;
+  document.getElementById('edit-issue').value = t.issueDate;
+  document.getElementById('edit-due').value   = t.dueDate;
+  openModal('edit-modal');
+}
+function saveEdit() {
+  const id = document.getElementById('edit-id').value;
+  const t  = transactions.find(x=>x.id===id); if (!t) return;
+  t.uid       = document.getElementById('edit-uid').value.trim()||t.uid;
+  t.issueDate = document.getElementById('edit-issue').value||t.issueDate;
+  t.dueDate   = document.getElementById('edit-due').value||t.dueDate;
+  t.status    = computeStatus(t.dueDate);
+  closeModal('edit-modal');
+  showToast('Transaction updated!','success');
+  render();
+}
+function deleteRow(id) {
+  if (!confirm('Delete this transaction record?')) return;
+  transactions = transactions.filter(x=>x.id!==id);
+  showToast('Transaction deleted','info'); render();
+}
+
+/* ═══════════════════════════════════════════
+   ADD BOOK
+═══════════════════════════════════════════ */
+function saveBook() {
+  const title  = document.getElementById('ab-title').value.trim();
+  const author = document.getElementById('ab-author').value.trim();
+  const genre  = document.getElementById('ab-genre').value.trim()||'General';
+  const copies = parseInt(document.getElementById('ab-copies').value)||1;
+  if (!title||!author) { showToast('Title and Author required','error'); return; }
+  const id = 'BK'+String(books.length+1).padStart(3,'0');
+  books.push({id,title,author,genre,copies});
+  ['ab-title','ab-author','ab-genre'].forEach(x=>document.getElementById(x).value='');
+  document.getElementById('ab-copies').value='1';
+  closeModal('add-book-modal');
+  buildAllSelects(); buildQRGrid(); renderBooks();
+  showToast(`"${title}" added to catalogue!`,'success');
+}
+
+/* ═══════════════════════════════════════════
+   QR CODES
+═══════════════════════════════════════════ */
+function buildQRGrid() {
+  const grid = document.getElementById('qr-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  books.forEach(b => {
+    const card = document.createElement('div');
+    card.className = 'book-card';
+    const mini = `qr-mini-${b.id}`;
+    card.innerHTML = `
+      <div class="bc-hdr">
+        <div><div class="bc-title">${b.title}</div><div class="bc-author">${b.author}</div></div>
+        <div class="bc-id">${b.id}</div>
+      </div>
+      <div id="${mini}" style="background:#fff;padding:8px;border-radius:6px;margin:10px 0;display:flex;align-items:center;justify-content:center;"></div>
+      <div class="bc-foot">
+        <button class="btn btn-ghost btn-sm" onclick="openQRModal('${b.id}')">View Full QR</button>
+        <button class="btn btn-primary btn-sm" onclick="simulateScanById('${b.id}')">Scan</button>
+      </div>
+    `;
+    grid.appendChild(card);
+    setTimeout(()=>{
+      new QRCode(document.getElementById(mini),{
+        text:`LIBRACORE:${b.id}:${b.title}`,width:80,height:80,
+        colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M
+      });
+    },50);
+  });
+}
+
+function openQRModal(bookId) {
+  qrBookId = bookId;
+  const book = books.find(b=>b.id===bookId); if (!book) return;
+  document.getElementById('qr-modal-title').textContent = book.title;
+  document.getElementById('qr-modal-sub').textContent   = `${book.id} · ${book.author}`;
+  const cv = document.getElementById('qr-canvas');
+  cv.innerHTML = '';
+  new QRCode(cv,{text:`LIBRACORE:${book.id}:${book.title}`,width:200,height:200,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.H});
+  openModal('qr-modal');
+}
+
+function dlQR() {
+  const img = document.querySelector('#qr-canvas img')||document.querySelector('#qr-canvas canvas');
+  if (!img) return;
+  const book = books.find(b=>b.id===qrBookId);
+  const a = document.createElement('a');
+  a.href     = img.tagName==='CANVAS' ? img.toDataURL('image/png') : img.src;
+  a.download = `QR_${qrBookId}_${book?.title||'book'}.png`;
+  a.click();
+  showToast('QR code downloaded!','success');
+}
+
+function scanFromQRModal() {
+  closeModal('qr-modal');
+  simulateScanById(qrBookId);
+}
+
+/* ═══════════════════════════════════════════
+   SCANNER
+═══════════════════════════════════════════ */
+function simulateScan() {
+  const val = document.getElementById('scan-select').value;
+  if (!val) { showToast('Select a book first','error'); return; }
+  simulateScanById(val);
+}
+function simulateScanById(bookId) {
+  scanBookId = bookId;
+  scanAction = 'take';
+  const book = books.find(b=>b.id===bookId);
+  document.getElementById('scan-modal-title').textContent = book?.title||bookId;
+  document.getElementById('scan-modal-sub').textContent   = `ID: ${bookId}`;
+  document.getElementById('scan-uid').value = '';
+  selectScanAction('take');
+  openModal('scan-modal');
+}
+function selectScanAction(action) {
+  scanAction = action;
+  document.getElementById('ac-take').classList.toggle('sel', action==='take');
+  document.getElementById('ac-ret').classList.toggle('sel',  action==='return');
+  document.getElementById('scan-dur-wrap').style.display = action==='take' ? 'block' : 'none';
+}
+function confirmScanAction() {
+  const uid = document.getElementById('scan-uid').value.trim();
+  if (!uid) { showToast('Enter Student UID','error'); return; }
+
+  if (scanAction==='take') {
+    const dur    = parseInt(document.getElementById('scan-dur').value);
+    const today  = new Date().toISOString().split('T')[0];
+    const due    = addDays(today, dur);
+    const book   = books.find(b=>b.id===scanBookId);
+    const issued = transactions.filter(t=>t.bookId===scanBookId).length;
+    if (book && issued>=book.copies) { showToast(`"${book.title}" not available!`,'error'); return; }
+    transactions.unshift(mkTxn(scanBookId, uid, today, due));
+    closeModal('scan-modal');
+    showToast(`Book issued to ${uid}!`,'success');
+    render(); navigate('transactions');
+  } else {
+    // Find matching active transaction
+    const existing = transactions.find(t=>t.bookId===scanBookId&&t.uid===uid);
+    if (!existing) { showToast('No active transaction for this student & book','error'); return; }
+    closeModal('scan-modal');
+    // Open return modal with the found transaction
+    openReturnModal(existing.id);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   TABS
+═══════════════════════════════════════════ */
+function setTab(which) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+which)?.classList.add('active');
+  document.getElementById('panel-'+which)?.classList.add('active');
+}
+
+/* ═══════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════ */
+  const pageLabels = {
+  dashboard:'Dashboard', issue:'Issue Book', collect:'Collect Book',
+  transactions:'Transactions / Logs', books:'Book Catalogue',
+  malpractice:'Malpractice Records', scanner:'Connect Scanner'
+};
+const pageTags = {
+  dashboard:'Overview', issue:'Lending', collect:'Returns',
+  transactions:'Active Records', books:'Catalogue',
+  malpractice:'Damage & Loss', scanner:'Real-Time'
+};
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page)?.classList.add('active');
+  document.querySelector(`.nav-item[data-page="${page}"]`)?.classList.add('active');
+  document.getElementById('page-title').textContent = pageLabels[page]||page;
+  document.getElementById('page-tag').textContent   = pageTags[page]||'';
+  if (page==='books')     { buildAllSelects(); renderBooks(); }
+  if (page==='issue')     { document.getElementById('issue-date').value=new Date().toISOString().split('T')[0]; buildAllSelects(); }
+  if (page==='collect')   { document.getElementById('collect-query').value=''; collectSearch(); }
+  if (page==='malpractice') { renderDamagedTable(); renderLostTable(); }
+  render();
+}
+
+/* ═══════════════════════════════════════════
+   MODAL HELPERS
+═══════════════════════════════════════════ */
+function openModal(id)  { document.getElementById(id)?.classList.add('open'); }
+function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('overlay'))
+    document.querySelectorAll('.overlay.open').forEach(o=>o.classList.remove('open'));
+});
+
+/* ═══════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════ */
+function showToast(msg, type='info') {
+  const c = document.getElementById('toasts');
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  const icons = {success:'✅',error:'❌',info:'ℹ️',warn:'⚠️'};
+  t.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  c.appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateX(20px)'; t.style.transition='all .3s'; setTimeout(()=>t.remove(),300); }, 3200);
+}
+
+/* ═══════════════════════════════════════════
+   UTILS
+═══════════════════════════════════════════ */
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+}
+function addDays(dateStr, n) {
+  const d = new Date(dateStr+'T00:00:00');
+  d.setDate(d.getDate()+n);
+  return d.toISOString().split('T')[0];
+}
+function emptyRow(cols, msg='No records.') {
+  return `<tr><td colspan="${cols}"><div class="empty"><div class="empty-ico">📚</div>${msg}</div></td></tr>`;
+}
+
+/* ═══════════════════════════════════════════
+   REAL SCANNER — WebSocket Client
+   ─ Only adds new capability; never touches existing functions
+═══════════════════════════════════════════ */
+(function() {
+  'use strict';
+
+  /* ── State ──────────────────────────────────────────────────────────────── */
+  let _ws         = null;
+  let _code       = '';
+  let _pcConn     = false;   // connected to server
+  let _phoneConn  = false;   // phone joined session
+  let _pingTimer  = null;
+
+  /* ── Generate a random 6-character alphanumeric code ─────────────────── */
+  function genCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let c = '';
+    for (let i = 0; i < 6; i++) c += chars[Math.floor(Math.random() * chars.length)];
+    return c;
+  }
+
+  /* ── DOM shortcuts ───────────────────────────────────────────────────── */
+  function $id(id) { return document.getElementById(id); }
+
+  function setStatus(serverConnected, phoneConnected) {
+    _pcConn    = serverConnected;
+    _phoneConn = phoneConnected;
+
+    const sDot  = $id('ws-status-dot');
+    const sTxt  = $id('ws-status-text');
+    const pDot  = $id('ws-phone-dot');
+    const pTxt  = $id('ws-phone-text');
+    const badge = $id('nb-scanner');
+
+    if (sDot)  sDot.style.background  = serverConnected ? 'var(--green)' : 'var(--muted)';
+    if (sTxt)  sTxt.textContent        = serverConnected ? 'Connected to server' : 'Not connected to server';
+    if (sTxt)  sTxt.style.color        = serverConnected ? 'var(--green)' : 'var(--muted)';
+
+    if (pDot)  pDot.style.background  = phoneConnected  ? 'var(--accent)' : 'var(--muted)';
+    if (pTxt)  pTxt.textContent        = phoneConnected  ? '📱 Phone connected' : 'No phone';
+    if (pTxt)  pTxt.style.color        = phoneConnected  ? 'var(--accent)' : 'var(--muted)';
+
+    if (badge) {
+      badge.style.display = (serverConnected || phoneConnected) ? '' : 'none';
+      badge.style.background = phoneConnected ? 'rgba(52,211,153,.15)' : 'rgba(96,165,250,.15)';
+      badge.style.color      = phoneConnected ? 'var(--green)' : 'var(--blue)';
+      badge.style.border     = phoneConnected ? '1px solid rgba(52,211,153,.25)' : '1px solid rgba(96,165,250,.25)';
+      badge.textContent      = phoneConnected ? '●' : '○';
+    }
+  }
+
+  /* ── Initialise code on page load ───────────────────────────────────── */
+  function initCode() {
+    _code = genCode();
+    const el = $id('ws-session-code');
+    if (el) el.textContent = _code;
+  }
+
+  /* ── Connect / Reconnect to WebSocket server ─────────────────────────── */
+  function wsConnect() {
+    const urlEl = $id('ws-server-url');
+    const url   = (urlEl && urlEl.value.trim()) || 'ws://localhost:8765';
+
+    if (_ws) { _ws.onclose = null; _ws.close(); _ws = null; }
+    clearInterval(_pingTimer);
+    setStatus(false, false);
+
+    const btn = $id('ws-connect-btn');
+    if (btn) { btn.textContent = 'Connecting…'; btn.disabled = true; }
+
+    try {
+      _ws = new WebSocket(url);
+    } catch(e) {
+      showToast('Invalid WebSocket URL', 'error');
+      if (btn) { btn.textContent = 'Connect'; btn.disabled = false; }
+      return;
+    }
+
+    _ws.onopen = function() {
+      setStatus(true, false);
+      if (btn) { btn.textContent = 'Disconnect'; btn.disabled = false; btn.onclick = wsDisconnect; }
+      _ws.send(JSON.stringify({ type: 'register_pc', code: _code }));
+      _pingTimer = setInterval(() => {
+        if (_ws && _ws.readyState === WebSocket.OPEN) _ws.send(JSON.stringify({ type: 'ping' }));
+      }, 25000);
+      showToast('Scanner server connected!', 'success');
+    };
+
+    _ws.onmessage = function(evt) {
+      let msg;
+      try { msg = JSON.parse(evt.data); } catch { return; }
+
+      if (msg.type === 'phone_connected') {
+        setStatus(true, true);
+        showToast('📱 Phone scanner connected!', 'success');
+      }
+      if (msg.type === 'phone_disconnected') {
+        setStatus(true, false);
+        showToast('Phone scanner disconnected', 'warn');
+      }
+      if (msg.type === 'scan') {
+        handleIncomingScan(msg.data);
+      }
+    };
+
+    _ws.onerror = function() {
+      showToast('WebSocket error — check server URL', 'error');
+    };
+
+    _ws.onclose = function() {
+      clearInterval(_pingTimer);
+      setStatus(false, false);
+      if (btn) { btn.textContent = 'Connect'; btn.disabled = false; btn.onclick = wsConnect; }
+      showToast('Server connection closed', 'warn');
+    };
+  }
+
+  function wsDisconnect() {
+    if (_ws) { _ws.onclose = null; _ws.close(); _ws = null; }
+    clearInterval(_pingTimer);
+    setStatus(false, false);
+    const btn = $id('ws-connect-btn');
+    if (btn) { btn.textContent = 'Connect'; btn.disabled = false; btn.onclick = wsConnect; }
+    showToast('Disconnected from server', 'info');
+  }
+
+  /* ── Handle incoming scan ─────────────────────────────────────────────── */
+  function handleIncomingScan(data) {
+    // Update last-scan display
+    const wrap = $id('ws-last-scan');
+    const dataEl = $id('ws-last-scan-data');
+    if (wrap)   wrap.style.display = '';
+    if (dataEl) dataEl.textContent = data;
+
+    // Parse QR format: LIBRACORE:BOOK_ID:BOOK_TITLE
+    const parts = (data || '').split(':');
+    if (parts.length >= 2 && parts[0].toUpperCase() === 'LIBRACORE') {
+      const bookId = parts[1];
+      // Call EXISTING function — unchanged
+      if (typeof simulateScanById === 'function') {
+        simulateScanById(bookId);
+        showToast(`📱 QR scanned: ${bookId}`, 'info');
+      }
+    } else {
+      showToast('Received unknown QR data: ' + data, 'warn');
+    }
+  }
+
+  /* ── Copy code to clipboard ───────────────────────────────────────────── */
+  function wsCopyCode() {
+    navigator.clipboard.writeText(_code).then(
+      () => showToast('Session code copied!', 'success'),
+      () => {
+        const el = $id('ws-session-code');
+        if (el) { const r=document.createRange(); r.selectNode(el); window.getSelection().removeAllRanges(); window.getSelection().addRange(r); }
+        showToast('Select and copy the code manually', 'info');
+      }
+    );
+  }
+
+  /* ── Regenerate code ──────────────────────────────────────────────────── */
+  function wsRegenCode() {
+    if (_ws && _ws.readyState === WebSocket.OPEN) {
+      showToast('Disconnect first before generating a new code', 'warn');
+      return;
+    }
+    initCode();
+    showToast('New session code generated', 'info');
+  }
+
+  /* ── Expose to global scope so onclick="" handlers work ─────────────── */
+  window.wsConnect     = wsConnect;
+  window.wsDisconnect  = wsDisconnect;
+  window.wsCopyCode    = wsCopyCode;
+  window.wsRegenCode   = wsRegenCode;
+
+  /* ── Boot ─────────────────────────────────────────────────────────────── */
+  document.addEventListener('DOMContentLoaded', initCode);
+  // Also run immediately in case DOMContentLoaded already fired
+  if (document.readyState !== 'loading') initCode();
+
+})();
+
+/* ═══════════════════════════════════════════
+   BOOT
+═══════════════════════════════════════════ */
+init();
+setInterval(()=>{ refreshStatuses(); render(); }, 60000);
+</script>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0d0f14">
+
+    <!-- ── CONNECT PANEL ─────────────────────────────────────────────────── -->
+    <LinearLayout
+        android:id="@+id/connectPanel"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="28dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="LibraCore Scanner"
+            android:textSize="26sp"
+            android:textColor="#e8eaf2"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Connect to your PC dashboard"
+            android:textSize="13sp"
+            android:textColor="#7b82a0"
+            android:layout_marginBottom="36dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="SERVER URL"
+            android:textSize="10sp"
+            android:textColor="#7b82a0"
+            android:letterSpacing="0.12"
+            android:layout_marginBottom="6dp"/>
+
+        <EditText
+            android:id="@+id/etServerUrl"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:hint="ws://192.168.1.100:8765"
+            android:inputType="textUri"
+            android:textColor="#e8eaf2"
+            android:textColorHint="#7b82a0"
+            android:textSize="14sp"
+            android:background="@drawable/input_bg"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:layout_marginBottom="16dp"
+            android:singleLine="true"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="SESSION CODE (from PC)"
+            android:textSize="10sp"
+            android:textColor="#7b82a0"
+            android:letterSpacing="0.12"
+            android:layout_marginBottom="6dp"/>
+
+        <EditText
+            android:id="@+id/etSessionCode"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:hint="e.g. A3Z9KX"
+            android:inputType="textCapCharacters"
+            android:textColor="#6c8fff"
+            android:textColorHint="#7b82a0"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.3"
+            android:gravity="center"
+            android:background="@drawable/code_input_bg"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:layout_marginBottom="24dp"
+            android:singleLine="true"
+            android:maxLength="8"/>
+
+        <Button
+            android:id="@+id/btnConnect"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:text="Connect to PC"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:background="@drawable/btn_primary_bg"
+            android:textColor="#ffffff"
+            android:layout_marginBottom="12dp"/>
+
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Not connected"
+            android:textSize="13sp"
+            android:textColor="#7b82a0"
+            android:gravity="center"
+            android:layout_marginTop="8dp"/>
+
+    </LinearLayout>
+
+    <!-- ── CAMERA PANEL ──────────────────────────────────────────────────── -->
+    <FrameLayout
+        android:id="@+id/cameraPanel"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <!-- Camera preview -->
+        <androidx.camera.view.PreviewView
+            android:id="@+id/previewView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+        <!-- Green flash overlay on scan -->
+        <View
+            android:id="@+id/scanOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#34d399"
+            android:alpha="0"/>
+
+        <!-- Aiming reticle -->
+        <View
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:layout_gravity="center"
+            android:background="@drawable/scan_reticle"/>
+
+        <!-- Bottom info card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:orientation="vertical"
+            android:background="#CC0d0f14"
+            android:padding="20dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📷 Scanning — point at a book QR code"
+                android:textSize="14sp"
+                android:textColor="#e8eaf2"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:id="@+id/tvLastScan"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:textColor="#34d399"
+                android:visibility="gone"
+                android:layout_marginBottom="12dp"/>
+
+            <Button
+                android:id="@+id/btnDisconnect"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:text="Disconnect"
+                android:textSize="13sp"
+                android:background="@drawable/btn_ghost_bg"
+                android:textColor="#f87171"/>
+
+        </LinearLayout>
+    </FrameLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
