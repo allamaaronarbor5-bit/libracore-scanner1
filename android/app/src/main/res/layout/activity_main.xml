@@ -34,30 +34,7 @@
             android:textColor="#7b82a0"
             android:layout_marginBottom="36dp"/>
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="SERVER URL"
-            android:textSize="10sp"
-            android:textColor="#7b82a0"
-            android:letterSpacing="0.12"
-            android:layout_marginBottom="6dp"/>
-
-        <EditText
-            android:id="@+id/etServerUrl"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:hint="ws://192.168.1.100:8765"
-            android:inputType="textUri"
-            android:textColor="#e8eaf2"
-            android:textColorHint="#7b82a0"
-            android:textSize="14sp"
-            android:background="@drawable/input_bg"
-            android:paddingStart="14dp"
-            android:paddingEnd="14dp"
-            android:layout_marginBottom="16dp"
-            android:singleLine="true"/>
-
+        <!-- SESSION CODE — the only field users normally see -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -105,7 +82,63 @@
             android:textSize="13sp"
             android:textColor="#7b82a0"
             android:gravity="center"
-            android:layout_marginTop="8dp"/>
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="20dp"/>
+
+        <!-- Advanced toggle -->
+        <TextView
+            android:id="@+id/tvAdvancedToggle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Advanced ▾"
+            android:textSize="12sp"
+            android:textColor="#7b82a0"
+            android:gravity="center"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:layout_marginBottom="8dp"/>
+
+        <!-- Advanced: server URL (hidden by default) -->
+        <LinearLayout
+            android:id="@+id/serverUrlSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="SERVER URL (WEBSOCKET)"
+                android:textSize="10sp"
+                android:textColor="#7b82a0"
+                android:letterSpacing="0.12"
+                android:layout_marginBottom="6dp"/>
+
+            <EditText
+                android:id="@+id/etServerUrl"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:hint="ws://192.168.1.100:8765"
+                android:inputType="textUri"
+                android:textColor="#e8eaf2"
+                android:textColorHint="#7b82a0"
+                android:textSize="12sp"
+                android:background="@drawable/input_bg"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:layout_marginBottom="4dp"
+                android:singleLine="true"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Default: ws://localhost:8765 — change only if server is on a different machine"
+                android:textSize="10sp"
+                android:textColor="#555a70"
+                android:layout_marginBottom="8dp"/>
+
+        </LinearLayout>
 
     </LinearLayout>
 
@@ -118,13 +151,11 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
-        <!-- Camera preview -->
         <androidx.camera.view.PreviewView
             android:id="@+id/previewView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>
 
-        <!-- Green flash overlay on scan -->
         <View
             android:id="@+id/scanOverlay"
             android:layout_width="match_parent"
@@ -132,14 +163,12 @@
             android:background="#34d399"
             android:alpha="0"/>
 
-        <!-- Aiming reticle -->
         <View
             android:layout_width="200dp"
             android:layout_height="200dp"
             android:layout_gravity="center"
             android:background="@drawable/scan_reticle"/>
 
-        <!-- Bottom info card -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

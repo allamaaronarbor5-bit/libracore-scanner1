@@ -553,14 +553,22 @@ td{padding:11px 13px;font-size:.825rem;vertical-align:middle}
           </div>
         </div>
 
-        <!-- Server URL input -->
-        <div class="fg">
-          <label class="fl">Server URL (WebSocket)</label>
-          <div style="display:flex;gap:8px">
-            <input class="input ni" type="text" id="ws-server-url" placeholder="ws://YOUR_PC_IP:8765" style="flex:1"/>
-            <button class="btn btn-primary btn-sm" onclick="wsConnect()" id="ws-connect-btn">Connect</button>
+        <!-- Connect button -->
+        <div style="margin-bottom:14px">
+          <button class="btn btn-ghost btn-sm" onclick="wsConnect()" id="ws-connect-btn" style="width:100%;display:none">Reconnect</button>
+        </div>
+
+        <!-- Advanced: server URL toggle -->
+        <div style="margin-bottom:12px">
+          <div id="ws-advanced-toggle" onclick="wsToggleAdvanced()" style="font-size:.75rem;color:var(--muted);cursor:pointer;text-align:center;user-select:none;padding:4px 0">Advanced ▾</div>
+          <div id="ws-advanced-section" style="display:none;margin-top:10px">
+            <label class="fl" style="font-size:.68rem">Server URL (WebSocket)</label>
+            <div style="display:flex;gap:8px;margin-top:4px">
+              <input class="input ni" type="text" id="ws-server-url" placeholder="ws://localhost:8765" style="flex:1;font-size:.8rem"/>
+              <button class="btn btn-ghost btn-sm" onclick="wsCopyServerUrl()" title="Copy URL">📋</button>
+            </div>
+            <div style="font-size:.65rem;color:var(--muted);margin-top:4px">Auto-filled from this page's address. Change only if server is on a different machine.</div>
           </div>
-          <div style="font-size:.68rem;color:var(--muted);margin-top:4px">Run <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">node server/server.js</code> on your PC, then use <code style="background:var(--surface2);padding:1px 5px;border-radius:4px">ws://&lt;your-pc-ip&gt;:8765</code></div>
         </div>
 
         <!-- Status row -->
@@ -1542,7 +1550,40 @@ function emptyRow(cols, msg='No records.') {
   }
 
   /* ── Connect / Reconnect to WebSocket server ─────────────────────────── */
+  function wsAutoFillServerUrl() {
+    const el = $id('ws-server-url');
+    if (!el || el.value.trim()) return;
+    try {
+      const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      el.value = proto + '//' + location.hostname + ':8765';
+    } catch(e) {
+      el.value = 'ws://localhost:8765';
+    }
+  }
+
+  function wsToggleAdvanced() {
+    const sec = $id('ws-advanced-section');
+    const tog = $id('ws-advanced-toggle');
+    if (!sec) return;
+    if (sec.style.display === 'none') {
+      wsAutoFillServerUrl();
+      sec.style.display = 'block';
+      if (tog) tog.textContent = 'Advanced ▴';
+    } else {
+      sec.style.display = 'none';
+      if (tog) tog.textContent = 'Advanced ▾';
+    }
+  }
+
+  function wsCopyServerUrl() {
+    const el = $id('ws-server-url');
+    if (!el) return;
+    wsAutoFillServerUrl();
+    navigator.clipboard.writeText(el.value).then(() => showToast('Server URL copied', 'success'));
+  }
+
   function wsConnect() {
+    wsAutoFillServerUrl();
     const urlEl = $id('ws-server-url');
     const url   = (urlEl && urlEl.value.trim()) || 'ws://localhost:8765';
 
@@ -1563,7 +1604,7 @@ function emptyRow(cols, msg='No records.') {
 
     _ws.onopen = function() {
       setStatus(true, false);
-      if (btn) { btn.textContent = 'Disconnect'; btn.disabled = false; btn.onclick = wsDisconnect; }
+      if (btn) { btn.textContent = 'Disconnect'; btn.disabled = false; btn.onclick = wsDisconnect; btn.style.display = ''; }
       _ws.send(JSON.stringify({ type: 'register_pc', code: _code }));
       _pingTimer = setInterval(() => {
         if (_ws && _ws.readyState === WebSocket.OPEN) _ws.send(JSON.stringify({ type: 'ping' }));
@@ -1595,7 +1636,7 @@ function emptyRow(cols, msg='No records.') {
     _ws.onclose = function() {
       clearInterval(_pingTimer);
       setStatus(false, false);
-      if (btn) { btn.textContent = 'Connect'; btn.disabled = false; btn.onclick = wsConnect; }
+      if (btn) { btn.textContent = 'Reconnect'; btn.disabled = false; btn.onclick = wsConnect; btn.style.display = ''; }
       showToast('Server connection closed', 'warn');
     };
   }
@@ -1654,15 +1695,31 @@ function emptyRow(cols, msg='No records.') {
   }
 
   /* ── Expose to global scope so onclick="" handlers work ─────────────── */
-  window.wsConnect     = wsConnect;
+  window.wsConnect        = wsConnect;
+  window.wsToggleAdvanced = wsToggleAdvanced;
+  window.wsCopyServerUrl  = wsCopyServerUrl;
+  // Auto-fill server URL silently on load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', wsAutoFillServerUrl);
+  } else {
+    wsAutoFillServerUrl();
+  }
   window.wsDisconnect  = wsDisconnect;
   window.wsCopyCode    = wsCopyCode;
   window.wsRegenCode   = wsRegenCode;
+  window.wsAutoConnect = wsAutoConnect;
 
   /* ── Boot ─────────────────────────────────────────────────────────────── */
-  document.addEventListener('DOMContentLoaded', initCode);
-  // Also run immediately in case DOMContentLoaded already fired
-  if (document.readyState !== 'loading') initCode();
+  function wsAutoConnect() {
+    wsAutoFillServerUrl();
+    // Only auto-connect if not already connected
+    if (!_ws || _ws.readyState === WebSocket.CLOSED || _ws.readyState === WebSocket.CLOSING) {
+      wsConnect();
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => { initCode(); wsAutoConnect(); });
+  if (document.readyState !== 'loading') { initCode(); wsAutoConnect(); }
 
 })();
 

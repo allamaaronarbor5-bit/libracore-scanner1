@@ -5,6 +5,8 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
 import android.view.View
 import android.widget.*
@@ -25,28 +27,36 @@ import java.util.concurrent.Executors
 class MainActivity : AppCompatActivity() {
 
     // ── Views ─────────────────────────────────────────────────────────────────
-    private lateinit var previewView:     PreviewView
-    private lateinit var etServerUrl:     EditText
-    private lateinit var etSessionCode:   EditText
-    private lateinit var btnConnect:      Button
-    private lateinit var tvStatus:        TextView
-    private lateinit var tvLastScan:      TextView
-    private lateinit var scanOverlay:     View
-    private lateinit var connectPanel:    View
-    private lateinit var cameraPanel:     View
-    private lateinit var btnDisconnect:   Button
+    private lateinit var previewView:      PreviewView
+    private lateinit var etServerUrl:      EditText
+    private lateinit var etSessionCode:    EditText
+    private lateinit var btnConnect:       Button
+    private lateinit var tvStatus:         TextView
+    private lateinit var tvLastScan:       TextView
+    private lateinit var scanOverlay:      View
+    private lateinit var connectPanel:     View
+    private lateinit var cameraPanel:      View
+    private lateinit var btnDisconnect:    Button
+    private lateinit var serverUrlSection: View       // advanced section wrapper
+    private lateinit var tvAdvancedToggle: TextView   // "Advanced ▾" clickable
 
     // ── Camera / ML Kit ───────────────────────────────────────────────────────
     private lateinit var cameraExecutor: ExecutorService
     private var imageAnalyzer:           ImageAnalysis? = null
     private val scanner = BarcodeScanning.getClient()
     private var lastScannedData = ""
-    private var cooldownActive  = false         // 2-second pause between scans
+    private var cooldownActive  = false
 
     // ── WebSocket ─────────────────────────────────────────────────────────────
     private var webSocket:  WebSocket? = null
     private val client =    OkHttpClient()
     private var connected = false
+
+    // ── Prefs key ─────────────────────────────────────────────────────────────
+    private val PREFS_NAME    = "libracore_prefs"
+    private val PREF_SERVER   = "server_url"
+    private val DEFAULT_SERVER = "ws://localhost:8765"
+    private val CODE_AUTO_LEN  = 6   // auto-connect once code reaches this length
 
     companion object {
         private const val TAG              = "LibraCoreScanner"
@@ -59,18 +69,46 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        previewView   = findViewById(R.id.previewView)
-        etServerUrl   = findViewById(R.id.etServerUrl)
-        etSessionCode = findViewById(R.id.etSessionCode)
-        btnConnect    = findViewById(R.id.btnConnect)
-        btnDisconnect = findViewById(R.id.btnDisconnect)
-        tvStatus      = findViewById(R.id.tvStatus)
-        tvLastScan    = findViewById(R.id.tvLastScan)
-        scanOverlay   = findViewById(R.id.scanOverlay)
-        connectPanel  = findViewById(R.id.connectPanel)
-        cameraPanel   = findViewById(R.id.cameraPanel)
+        previewView      = findViewById(R.id.previewView)
+        etServerUrl      = findViewById(R.id.etServerUrl)
+        etSessionCode    = findViewById(R.id.etSessionCode)
+        btnConnect       = findViewById(R.id.btnConnect)
+        btnDisconnect    = findViewById(R.id.btnDisconnect)
+        tvStatus         = findViewById(R.id.tvStatus)
+        tvLastScan       = findViewById(R.id.tvLastScan)
+        scanOverlay      = findViewById(R.id.scanOverlay)
+        connectPanel     = findViewById(R.id.connectPanel)
+        cameraPanel      = findViewById(R.id.cameraPanel)
+        serverUrlSection = findViewById(R.id.serverUrlSection)
+        tvAdvancedToggle = findViewById(R.id.tvAdvancedToggle)
 
-        cameraExecutor = Executors.newSingleThreadExecutor()
+        // Load saved server URL (or default)
+        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        val savedUrl = prefs.getString(PREF_SERVER, DEFAULT_SERVER) ?: DEFAULT_SERVER
+        etServerUrl.setText(savedUrl)
+
+        // Advanced toggle: show/hide server URL section
+        tvAdvancedToggle.setOnClickListener {
+            if (serverUrlSection.visibility == View.GONE) {
+                serverUrlSection.visibility = View.VISIBLE
+                tvAdvancedToggle.text = "Advanced ▴"
+            } else {
+                serverUrlSection.visibility = View.GONE
+                tvAdvancedToggle.text = "Advanced ▾"
+            }
+        }
+
+        // Auto-connect when session code reaches CODE_AUTO_LEN characters
+        etSessionCode.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                val code = s?.toString()?.trim() ?: ""
+                if (code.length == CODE_AUTO_LEN && !connected) {
+                    attemptConnect()
+                }
+            }
+        })
 
         btnConnect.setOnClickListener    { attemptConnect() }
         btnDisconnect.setOnClickListener { disconnectWS() }
@@ -159,8 +197,8 @@ class MainActivity : AppCompatActivity() {
     private fun startCooldown() {
         cooldownActive = true
         Handler(Looper.getMainLooper()).postDelayed({
-            cooldownActive    = false
-            lastScannedData   = ""
+            cooldownActive  = false
+            lastScannedData = ""
         }, SCAN_COOLDOWN_MS)
     }
 
@@ -168,7 +206,7 @@ class MainActivity : AppCompatActivity() {
     private fun onQrScanned(data: String) {
         Log.d(TAG, "QR scanned: $data")
         runOnUiThread {
-            tvLastScan.text    = "Last: $data"
+            tvLastScan.text       = "Last: $data"
             tvLastScan.visibility = View.VISIBLE
             flashOverlay()
         }
@@ -184,10 +222,14 @@ class MainActivity : AppCompatActivity() {
     // ── WebSocket ─────────────────────────────────────────────────────────────
     private fun attemptConnect() {
         val serverUrl = etServerUrl.text.toString().trim()
-        val code      = etSessionCode.text.toString().trim().uppercase()
+            .ifEmpty { DEFAULT_SERVER }
+        val code = etSessionCode.text.toString().trim().uppercase()
 
-        if (serverUrl.isEmpty()) { toast("Enter server URL"); return }
-        if (code.length < 4)    { toast("Enter session code from PC"); return }
+        if (code.length < 4) { toast("Enter session code from PC"); return }
+
+        // Persist the server URL for next time
+        getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit()
+            .putString(PREF_SERVER, serverUrl).apply()
 
         setStatus("Connecting…", false)
         btnConnect.isEnabled = false
@@ -235,7 +277,7 @@ class MainActivity : AppCompatActivity() {
                     setStatus("Connection failed: ${t.localizedMessage}", false)
                     btnConnect.isEnabled = true
                     showConnectPanel()
-                    toast("Cannot reach server — check URL and network")
+                    toast("Cannot reach server — tap Advanced to check URL")
                 }
             }
 
@@ -252,15 +294,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun disconnectWS() {
         webSocket?.close(1000, "User disconnected")
-        webSocket  = null
-        connected  = false
+        webSocket = null
+        connected = false
         setStatus("Disconnected", false)
         showConnectPanel()
     }
 
     private fun sendScan(data: String) {
         val ws = webSocket ?: return
-        if (!connected)   return
+        if (!connected) return
         ws.send(JSONObject().apply {
             put("type", "scan")
             put("data", data)
@@ -269,7 +311,7 @@ class MainActivity : AppCompatActivity() {
 
     // ── UI helpers ─────────────────────────────────────────────────────────────
     private fun setStatus(msg: String, ok: Boolean) {
-        tvStatus.text      = msg
+        tvStatus.text = msg
         tvStatus.setTextColor(
             ContextCompat.getColor(
                 this,
